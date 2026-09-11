@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Chấm Điểm Cổng Thông Tin</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #e9ecef; 
+            margin: 0; 
+            padding: 20px 30px; 
+            height: 100vh; 
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+        
+        h2 { 
+            text-align: center; color: #1a73e8; margin: 0 0 20px 0; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0;
+        }
+        
+        .layout { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 30px; 
+            flex: 1; 
+            min-height: 0; 
+            width: 100%;
+        }
+        
+        .panel {
+            background: #ffffff; 
+            border-radius: 12px; 
+            padding: 20px 25px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            box-sizing: border-box;
+            overflow: hidden; 
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #f1f3f4;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+        
+        .panel-header h3 { margin: 0; color: #202124; font-size: 1.3rem; }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9fa;
+            padding: 4px 12px;
+            border-radius: 8px;
+            border: 1px solid #dadce0;
+        }
+
+        .zoom-btn {
+            background: #ffffff;
+            border: 1px solid #dadce0;
+            color: #1a73e8;
+            border-radius: 4px;
+            width: 28px;
+            height: 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .zoom-btn:hover { background: #1a73e8; color: #ffffff; border-color: #1a73e8; }
+        #zoomLevel { font-size: 0.9rem; font-weight: bold; color: #5f6368; min-width: 50px; text-align: center; }
+        
+        /* KHU VỰC BÊN TRÁI: ĐỌC VĂN BẢN */
+        .doc-preview-wrapper {
+            flex: 1;
+            background: #ffffff; 
+            border: 1px solid #dadce0; 
+            border-radius: 8px; 
+            padding: 20px 30px; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        #docPreview {
+            font-size: 1.15rem; 
+            line-height: 1.8; 
+            color: #202124;
+            transition: font-size 0.2s ease; 
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+        
+        #docPreview img, #docPreview table {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .doc-preview-wrapper::-webkit-scrollbar, .right-content::-webkit-scrollbar { width: 8px; }
+        .doc-preview-wrapper::-webkit-scrollbar-track, .right-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .doc-preview-wrapper::-webkit-scrollbar-thumb, .right-content::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .doc-preview-wrapper::-webkit-scrollbar-thumb:hover, .right-content::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        #docPreview p { margin-top: 0; margin-bottom: 15px; text-align: justify; }
+        #docPreview .placeholder { color: #80868b; font-style: italic; text-align: center; margin-top: 100px; font-size: 1.1rem; }
+
+        /* KHU VỰC BÊN PHẢI: CÔNG CỤ CHẤM ĐIỂM */
+        .right-content {
+            flex: 1;
+            overflow-y: auto; 
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-right: 5px;
+        }
+        
+        .upload-area { background: #f4f7f6; border: 2px dashed #1a73e8; border-radius: 10px; padding: 15px; text-align: center; transition: 0.3s; flex-shrink: 0; }
+        .upload-area:hover { background: #e8f0fe; }
+        .upload-area p { margin: 0 0 8px 0; font-weight: 600; color: #3c4043; font-size: 1.05rem; }
+        input[type="file"] { display: none; }
+        .upload-btn { background: #fff; border: 1.5px solid #1a73e8; color: #1a73e8; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-block; transition: 0.2s; font-size: 0.95rem; }
+        .upload-btn:hover { background: #1a73e8; color: #fff; }
+        #aiStatus { margin-top: 8px; font-size: 0.9rem; font-style: italic; color: #0d652d; font-weight: bold; }
+        .note-hint { font-size: 0.82rem; color: #5f6368; font-style: italic; margin-top: 4px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; flex-shrink: 0; }
+        .criterion { background: #f8f9fa; border: 1px solid #dadce0; border-radius: 10px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
+        .criterion:hover { border-color: #1a73e8; box-shadow: 0 4px 15px rgba(26,115,232,0.1); }
+        .criterion h3 { font-size: 1.05rem; color: #202124; margin: 0 0 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        .criterion h3 span { font-size: 0.85rem; font-weight: 600; color: #1a73e8; background: #e8f0fe; padding: 4px 8px; border-radius: 6px; }
+        .levels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; flex-grow: 1; }
+        .level { background: #ffffff; border: 1px solid #e8eaed; padding: 10px 6px; border-radius: 6px; text-align: center; font-size: 0.8rem; color: #5f6368; line-height: 1.4; display: flex; flex-direction: column; justify-content: center; }
+        .level strong { color: #202124; margin-bottom: 4px; font-size: 0.9rem; }
+        .input-row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; border-top: 1px dashed #dadce0; padding-top: 12px; }
+        .input-row label { font-weight: 600; color: #3c4043; font-size: 1.05rem; }
+        input[type="number"] { width: 80px; padding: 10px 12px; border: 2px solid #e8eaed; border-radius: 8px; font-size: 1.2rem; text-align: center; font-weight: bold; color: #1a73e8; outline: none; }
+        input[type="number"]:focus { border-color: #1a73e8; }
+        
+        .action-area { display: flex; gap: 20px; align-items: stretch; margin-top: auto; flex-shrink: 0; padding-top: 10px;}
+        .btn { flex: 1; background: #1a73e8; color: white; border: none; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; text-transform: uppercase; min-height: 80px; letter-spacing: 0.5px;}
+        .btn:hover { background: #1557b0; }
+        .result-box { flex: 2; padding: 0 25px; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; border: 2px solid #e8eaed; color: #80868b; }
+        .result-box.active { color: #202124; background: #ffffff; border-color: #dadce0; }
+        .score-container { display: flex; align-items: baseline; gap: 10px; font-size: 1.2rem; font-weight: 600; }
+        .score-display { font-size: 2.6rem; font-weight: bold; color: inherit; }
+        .rank-display { font-size: 1.4rem; font-weight: bold; text-transform: uppercase; padding: 10px 18px; border-radius: 8px; background: #e8eaed; }
+        .rank-III { background: #ceead6; color: #0d652d; }
+        .rank-II { background: #d2e3fc; color: #174ea6; }
+        .rank-I { background: #fef7e0; color: #b06000; }
+        .rank-fail { background: #fad2cf; color: #a50e0e; }
+    </style>
+</head>
+<body>
+    <h2>Hệ Thống Chấm Điểm Tin/Bài Cổng Thông Tin</h2>
+    
+    <div class="layout">
+        <!-- KHỐI BÊN TRÁI -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Nội dung bản thảo</h3>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomText(-0.1)" title="Thu nhỏ">➖</button>
+                    <span id="zoomLevel">100%</span>
+                    <button class="zoom-btn" onclick="zoomText(0.1)" title="Phóng to">➕</button>
+                    <button class="zoom-btn" style="width: auto; padding: 0 8px; font-size: 0.8rem;" onclick="resetZoom()" title="Về mặc định">Khôi phục</button>
+                </div>
+            </div>
+            
+            <div class="doc-preview-wrapper">
+                <div id="docPreview">
+                    <div class="placeholder">Văn bản sẽ hiển thị ở đây. Hệ thống tự động fit width và cho phép phóng to/thu nhỏ linh hoạt...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KHỐI BÊN PHẢI -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Bảng đánh giá</h3>
+            </div>
+            <div class="right-content">
+                <div class="upload-area">
+                    <p>Tải lên bản thảo (.txt, .docx) để hệ thống đọc và gợi ý điểm số:</p>
+                    <label for="fileInput" class="upload-btn">Chọn file bài viết</label>
+                    <input type="file" id="fileInput" accept=".txt, .docx" onchange="handleFile(event)">
+                    <div id="aiStatus"></div>
+                    <div class="note-hint">*(Điểm phân tích chỉ mang tính chất gợi ý tham khảo, người chấm có thể chủ động điều chỉnh)*</div>
+                </div>
+
+                <div class="grid">
+                    <div class="criterion">
+                        <h3>1. Sự kiện & Phân tích <span>Tối đa 40đ</span></h3>
+                        <div class="levels">
+                            <div class="level"><strong>Mức I (20-27)</strong>Đơn giản, cơ bản.</div>
+                            <div class="level"><strong>Mức II (28-33)</strong>Phức tạp, chặt chẽ.</div>
+                            <div class="level"><strong>Mức III (34-40)</strong>Đa chiều, sâu sắc.</div>
+                        </div>
+                        <div class="input-row"><label>Điểm:</label><input type="number" id="c1" min="0" max="40" placeholder="0"></div>
+                    </div>
+
+                    <div class="criterion">
+                        <h3>2. Tính kịp thời & Thời sự <span>Tối đa 20đ</span></h3>
+                        <div class="levels">
+                            <div class="level"><strong>Mức I (10-13)</strong>Kịp thời, đúng hạn.</div>
+                            <div class="level"><strong>Mức II (14-16)</strong>Tính thời sự cao.</div>
+                            <div class="level"><strong>Mức III (17-20)</strong>Đúng "điểm rơi".</div>
+                        </div>
+                        <div class="input-row"><label>Điểm:</label><input type="number" id="c2" min="0" max="20" placeholder="0"></div>
+                    </div>
+
+                    <div class="criterion">
+                        <h3>3. Thu hút & Định hướng <span>Tối đa 25đ</span></h3>
+                        <div class="levels">
+                            <div class="level"><strong>Mức I (12-17)</strong>Phục vụ tra cứu.</div>
+                            <div class="level"><strong>Mức II (18-21)</strong>Mới mẻ, thu hút.</div>
+                            <div class="level"><strong>Mức III (22-25)</strong>Định hướng tốt.</div>
+                        </div>
+                        <div class="input-row"><label>Điểm:</label><input type="number" id="c3" min="0" max="25" placeholder="0"></div>
+                    </div>
+
+                    <div class="criterion">
+                        <h3>4. Hình thức & Văn phong <span>Tối đa 15đ</span></h3>
+                        <div class="levels">
+                            <div class="level"><strong>Mức I (7-10)</strong>Mạch lạc, chuẩn mực.</div>
+                            <div class="level"><strong>Mức II (11-12)</strong>Trau chuốt, hấp dẫn.</div>
+                            <div class="level"><strong>Mức III (13-15)</strong>Bố cục xuất sắc.</div>
+                        </div>
+                        <div class="input-row"><label>Điểm:</label><input type="number" id="c4" min="0" max="15" placeholder="0"></div>
+                    </div>
+                </div>
+
+                <div class="action-area">
+                    <button class="btn" onclick="calculateScore()">Xác Nhận</button>
+                    <div class="result-box" id="resultBox">
+                        <div class="score-container">Tổng: <span class="score-display" id="totalScore" style="color: #1a73e8;">--</span> / 100</div>
+                        <div class="rank-display" id="rankDisplay">Chưa tính</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let baseFontSize = 1.15; 
+        
+        function zoomText(step) {
+            baseFontSize += step;
+            if (baseFontSize < 0.5) baseFontSize = 0.5;
+            if (baseFontSize > 3) baseFontSize = 3;
+            
+            document.getElementById('docPreview').style.fontSize = baseFontSize + 'rem';
+            let percent = Math.round((baseFontSize / 1.15) * 100);
+            document.getElementById('zoomLevel').innerText = percent + '%';
+        }
+
+        function resetZoom() {
+            baseFontSize = 1.15;
+            document.getElementById('docPreview').style.fontSize = baseFontSize + 'rem';
+            document.getElementById('zoomLevel').innerText = '100%';
+        }
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const status = document.getElementById('aiStatus');
+            const preview = document.getElementById('docPreview');
+            status.innerHTML = "⏳ Đang phân tích nội dung file...";
+            status.style.color = "#b06000";
+
+            resetZoom();
+
+            const reader = new FileReader();
+
+            if (file.name.endsWith('.txt')) {
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    preview.innerHTML = `<p>${text.replace(/\n/g, '</p><p>')}</p>`;
+                    analyzeText(text);
+                };
+                reader.readAsText(file);
+            } else if (file.name.endsWith('.docx')) {
+                reader.onload = function(e) {
+                    mammoth.convertToHtml({arrayBuffer: e.target.result})
+                        .then(function(result) {
+                            preview.innerHTML = result.value;
+                            return mammoth.extractRawText({arrayBuffer: e.target.result});
+                        })
+                        .then(function(result) {
+                            analyzeText(result.value);
+                        })
+                        .catch(function(err){ 
+                            status.innerHTML = "❌ Lỗi đọc file Word. Hãy thử copy text lưu thành file .txt"; 
+                            status.style.color = "red"; 
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                status.innerHTML = "❌ Vui lòng chọn file .txt hoặc .docx";
+                status.style.color = "red";
+            }
+        }
+
+        function analyzeText(text) {
+            let lowerText = text.toLowerCase();
+            let words = text.split(/\s+/).length;
+            
+            let c1 = 20, c2 = 11, c3 = 13, c4 = 8; 
+
+            if (words > 800) { c1 += 6; c4 += 3; } else if (words > 400) { c1 += 4; c4 += 2; }
+
+            let k_thoisu = (lowerText.match(/mới nhất|cấp bách|hôm nay|vừa qua|chỉ đạo|hội nghị/g) || []).length;
+            if (k_thoisu >= 3) { c2 += 5; c3 += 2; }
+
+            let k_chuyenmon = (lowerText.match(/đầu tư|xúc tiến|doanh nghiệp|hỗ trợ|chiến lược|dự án|hà nội/g) || []).length;
+            if (k_chuyenmon >= 5) { c1 += 6; c3 += 4; }
+
+            let k_phantic = (lowerText.match(/đánh giá|thực tiễn|giải pháp|tuy nhiên|thách thức|cơ hội/g) || []).length;
+            if (k_phantic >= 4) { c1 += 5; c3 += 4; c4 += 2; }
+
+            c1 = Math.min(c1, 40); c2 = Math.min(c2, 20); c3 = Math.min(c3, 25); c4 = Math.min(c4, 15);
+
+            document.getElementById('c1').value = c1;
+            document.getElementById('c2').value = c2;
+            document.getElementById('c3').value = c3;
+            document.getElementById('c4').value = c4;
+
+            let status = document.getElementById('aiStatus');
+            status.innerHTML = `✅ Đã quét xong (${words} từ) và gợi ý điểm sơ bộ.`;
+            status.style.color = "#0d652d";
+            
+            calculateScore();
+        }
+
+        function calculateScore() {
+            let c1 = parseFloat(document.getElementById('c1').value) || 0;
+            let c2 = parseFloat(document.getElementById('c2').value) || 0;
+            let c3 = parseFloat(document.getElementById('c3').value) || 0;
+            let c4 = parseFloat(document.getElementById('c4').value) || 0;
+
+            if (c1 > 40) { c1 = 40; document.getElementById('c1').value = 40; }
+            if (c2 > 20) { c2 = 20; document.getElementById('c2').value = 20; }
+            if (c3 > 25) { c3 = 25; document.getElementById('c3').value = 25; }
+            if (c4 > 15) { c4 = 15; document.getElementById('c4').value = 15; }
+
+            let total = c1 + c2 + c3 + c4;
+            let resultBox = document.getElementById('resultBox');
+            let scoreDisplay = document.getElementById('totalScore');
+            let rankDisplay = document.getElementById('rankDisplay');
+            
+            resultBox.classList.add('active');
+            scoreDisplay.innerText = total;
+            rankDisplay.className = "rank-display"; 
+
+            if (total >= 85) {
+                rankDisplay.innerText = "MỨC III (TỐT)";
+                rankDisplay.classList.add("rank-III");
+                scoreDisplay.style.color = "#0d652d";
+            } else if (total >= 70) {
+                rankDisplay.innerText = "MỨC II (KHÁ)";
+                rankDisplay.classList.add("rank-II");
+                scoreDisplay.style.color = "#174ea6";
+            } else if (total >= 50) {
+                rankDisplay.innerText = "MỨC I (TRUNG BÌNH)";
+                rankDisplay.classList.add("rank-I");
+                scoreDisplay.style.color = "#b06000";
+            } else {
+                rankDisplay.innerText = "CHƯA ĐẠT";
+                rankDisplay.classList.add("rank-fail");
+                scoreDisplay.style.color = "#a50e0e";
+            }
+        }
+    </script>
+</body>
+</html>
