@@ -80,6 +80,74 @@
         .btn-ai:disabled { background: #9aa0a6; box-shadow: none; cursor: not-allowed; transform: none; }
         .api-key-container { background: #fff3cd; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ffe69c; display: flex; align-items: center; gap: 10px; }
         .api-key-container input { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; }
+
+        /* RESPONSIVE - MOBILE OPTIMIZATION */
+        @media (max-width: 768px) {
+            body { 
+                height: auto; 
+                overflow: auto; 
+                padding: 10px; 
+            }
+            h2 {
+                font-size: 1.4rem;
+                margin-bottom: 15px;
+            }
+            .layout { 
+                display: flex; 
+                flex-direction: column; 
+                gap: 20px; 
+                height: auto; 
+            }
+            .panel { 
+                height: auto; 
+                overflow: visible;
+                padding: 15px;
+            }
+            .doc-preview-wrapper { 
+                max-height: 400px; /* Giới hạn chiều cao văn bản trên mobile để dễ cuộn xuống bảng điểm */
+            }
+            .grid { 
+                grid-template-columns: 1fr; /* 4 tiêu chí xếp dọc */
+            }
+            .levels { 
+                grid-template-columns: 1fr; /* Mức I, II, III xếp dọc */
+                gap: 5px;
+            }
+            .level {
+                padding: 10px;
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 10px;
+                text-align: left;
+            }
+            .action-area { 
+                flex-direction: column; 
+                gap: 10px;
+            }
+            .btn {
+                min-height: 50px;
+                font-size: 1.1rem;
+            }
+            .result-box { 
+                padding: 15px; 
+                flex-direction: column; 
+                gap: 10px; 
+                text-align: center; 
+            }
+            .api-key-container { 
+                flex-direction: column; 
+                align-items: stretch; 
+                text-align: center;
+                gap: 12px;
+            }
+            #apiKeyInputGroup {
+                flex-direction: column;
+                gap: 8px;
+            }
+            #apiKeySuccessGroup {
+                flex-direction: column;
+            }
+        }
 </style>
 </head>
 <body>
